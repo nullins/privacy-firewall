@@ -10,12 +10,18 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@huggingface/transformers": "3.8.1",
+    "@huggingface/transformers": "^4.3.0",
     "esbuild": "0.27.1",
     "onnxruntime-web": "^1.23.2"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "allowScripts": {
+    "sharp@0.34.5": true,
+    "esbuild@0.27.1": true,
+    "onnxruntime-node@1.30.0": true,
+    "protobufjs@7.6.6": true
+  }
 }
