@@ -6,9 +6,8 @@ const DIST_DIR = 'dist';
 
 // Ensure dist directory exists
 function ensureDistDir() {
-  if (!fs.existsSync(DIST_DIR)) {
-    fs.mkdirSync(DIST_DIR, { recursive: true });
-  }
+  fs.rmSync(DIST_DIR, { recursive: true, force: true });
+  fs.mkdirSync(DIST_DIR, { recursive: true });
   if (!fs.existsSync(path.join(DIST_DIR, 'ui'))) {
     fs.mkdirSync(path.join(DIST_DIR, 'ui'), { recursive: true });
   }
@@ -60,10 +59,6 @@ function copyStaticFiles() {
   fs.copyFileSync('manifest.json', path.join(DIST_DIR, 'manifest.json'));
   console.log('✓ Copied manifest.json');
 
-  // Copy offscreen.html
-  fs.copyFileSync('offscreen.html', path.join(DIST_DIR, 'offscreen.html'));
-  console.log('✓ Copied offscreen.html');
-
   // Copy popup HTML and CSS
   fs.copyFileSync('ui/popup.html', path.join(DIST_DIR, 'ui/popup.html'));
   fs.copyFileSync('ui/popup.css', path.join(DIST_DIR, 'ui/popup.css'));
@@ -78,6 +73,11 @@ function copyStaticFiles() {
     fs.copyFileSync('ui/settings.css', path.join(DIST_DIR, 'ui/settings.css'));
     console.log('✓ Copied settings.css');
   }
+  fs.copyFileSync(
+    path.join('node_modules', '@picocss', 'pico', 'css', 'pico.min.css'),
+    path.join(DIST_DIR, 'ui', 'pico.min.css')
+  );
+  console.log('✓ Copied Pico CSS');
 
   // Copy icons
   const iconsDir = 'icons';
@@ -96,31 +96,18 @@ async function build() {
   try {
     ensureDistDir();
 
-    // Build background script (ES module for service worker)
+    // Build background script as a classic Firefox background script
     await esbuild.build({
       entryPoints: ['background.js'],
       bundle: true,
       outfile: path.join(DIST_DIR, 'background.js'),
-      format: 'esm',
+      format: 'iife',
       platform: 'browser',
-      target: 'chrome120',
+      target: 'firefox128',
       minify: false,
       sourcemap: true,
     });
     console.log('✓ Built background.js');
-
-    // Build offscreen script (ES module for offscreen document)
-    await esbuild.build({
-      entryPoints: ['offscreen.js'],
-      bundle: true,
-      outfile: path.join(DIST_DIR, 'offscreen.js'),
-      format: 'esm',
-      platform: 'browser',
-      target: 'chrome120',
-      minify: false,
-      sourcemap: true,
-    });
-    console.log('✓ Built offscreen.js');
 
     // Build content script (IIFE for content scripts)
     await esbuild.build({
@@ -129,7 +116,7 @@ async function build() {
       outfile: path.join(DIST_DIR, 'content-script.js'),
       format: 'iife',
       platform: 'browser',
-      target: 'chrome120',
+      target: 'firefox128',
       minify: false,
       sourcemap: true,
     });
@@ -142,7 +129,7 @@ async function build() {
       outfile: path.join(DIST_DIR, 'ui/popup.js'),
       format: 'iife',
       platform: 'browser',
-      target: 'chrome120',
+      target: 'firefox128',
       minify: false,
       sourcemap: true,
     });
@@ -156,7 +143,7 @@ async function build() {
         outfile: path.join(DIST_DIR, 'ui/settings.js'),
         format: 'iife',
         platform: 'browser',
-        target: 'chrome120',
+        target: 'firefox128',
         minify: false,
         sourcemap: true,
       });

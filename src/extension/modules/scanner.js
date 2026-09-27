@@ -130,47 +130,32 @@ export class Scanner {
     
     Logger.info("scanWithAI - sending SCAN_TEXT message to background...");
     
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage(
-        { type: MESSAGE_TYPES.SCAN_TEXT, text: text },
-        (response) => {
-          Logger.info("scanWithAI - got response:", response);
-          
-          if (chrome.runtime.lastError) {
-            Logger.warn("AI scan failed:", chrome.runtime.lastError.message);
-            resolve([]);
-            return;
-          }
-          
-          if (response && response.success) {
-            // Filter and enrich AI findings based on settings
-            const findings = (response.data || [])
-              .map(finding => {
-                const ruleId = AI_ENTITY_TO_RULE_MAP[finding.type] || finding.type;
-                return {
-                  ...finding,
-                  ruleId: ruleId,
-                  shouldBlock: this.shouldBlock(ruleId),
-                };
-              })
-              .filter(finding => {
-                // Filter by detection enabled
-                if (!this.isDetectionEnabled(finding.ruleId)) {
-                  return false;
-                }
-                // Filter by confidence threshold
-                const threshold = this.settings?.aiSettings?.confidenceThreshold || 0.5;
-                return (finding.score || finding.confidence || 1) >= threshold;
-              });
-            
-            resolve(findings);
-          } else {
-            Logger.warn("AI scan error:", response?.error);
-            resolve([]);
-          }
-        }
-      );
-    });
+    try {
+      const response = await browser.runtime.sendMessage({
+        type: MESSAGE_TYPES.SCAN_TEXT,
+        text,
+      });
+      Logger.info("scanWithAI - got response:", response);
+
+      if (!response?.success) {
+        Logger.warn("AI scan error:", response?.error);
+        return [];
+      }
+
+      return (response.data || [])
+        .map(finding => {
+          const ruleId = AI_ENTITY_TO_RULE_MAP[finding.type] || finding.type;
+          return { ...finding, ruleId, shouldBlock: this.shouldBlock(ruleId) };
+        })
+        .filter(finding => {
+          if (!this.isDetectionEnabled(finding.ruleId)) return false;
+          const threshold = this.settings?.aiSettings?.confidenceThreshold || 0.5;
+          return (finding.score || finding.confidence || 1) >= threshold;
+        });
+    } catch (error) {
+      Logger.warn("AI scan failed:", error);
+      return [];
+    }
   }
 
   /**

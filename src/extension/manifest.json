@@ -5,15 +5,18 @@
   "description": "Prevent pasting secrets and PII into AI tools. 100% local. No data leaves your machine.",
   
   "permissions": [
-    "scripting",
     "activeTab",
-    "storage",
-    "offscreen"
+    "storage"
+  ],
+
+  "host_permissions": [
+    "https://huggingface.co/*",
+    "https://*.huggingface.co/*",
+    "https://*.xethub.hf.co/*"
   ],
   
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "scripts": ["background.js"]
   },
   
   "content_scripts": [
@@ -49,15 +52,16 @@
   
   "options_page": "ui/settings.html",
   
-  "web_accessible_resources": [
-    {
-      "resources": ["wasm/*"],
-      "matches": ["<all_urls>"],
-      "extension_ids": []
-    }
-  ],
-  
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "privacyfirewall@privacyshield-ai.github.io",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
   }
 }

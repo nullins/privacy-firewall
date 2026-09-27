@@ -3,7 +3,7 @@
 // ============================================================================
 
 // Import modules (NOTE: Do NOT import engine-status.js or transformer-detector.js here
-// as they load the heavy AI model. AI runs only in the offscreen document.)
+// as they load the heavy AI model. AI runs in the Firefox background context.)
 import { CONFIG, MESSAGE_TYPES, DOM_IDS } from './modules/config.js';
 import { Logger, CleanupManager } from './modules/utils.js';
 import { injectGlobalStyles } from './modules/ui/styles.js';
@@ -138,16 +138,13 @@ async function initialize() {
  */
 function requestEngineStatus() {
   try {
-    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_ENGINE_STATUS }, (response) => {
-      if (chrome.runtime.lastError) {
-        return; // Silently ignore during page reload
-      }
+    browser.runtime.sendMessage({ type: MESSAGE_TYPES.GET_ENGINE_STATUS }).then(response => {
       if (response) {
         engineStatus.isReachable = response.reachable;
         engineStatus.isLoading = response.loading || false;
         Logger.info(`Engine status: ${engineStatus.isReachable ? 'READY' : engineStatus.isLoading ? 'LOADING' : 'OFFLINE'}`);
       }
-    });
+    }).catch(() => {});
   } catch (e) {
     // Silently ignore - extension context may be invalidated
   }
@@ -158,7 +155,7 @@ function requestEngineStatus() {
 // ============================================================================
 
 // Listen for engine status updates from background script
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+browser.runtime.onMessage.addListener((message) => {
   if (message.type === MESSAGE_TYPES.ENGINE_STATUS) {
     const wasReachable = engineStatus.isReachable;
     const wasLoading = engineStatus.isLoading;

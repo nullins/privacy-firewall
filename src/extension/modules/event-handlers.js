@@ -15,7 +15,7 @@ import { TypingWarningBanner } from './ui/banner.js';
 function isExtensionContextValid() {
   try {
     // This will throw if context is invalidated
-    return !!chrome.runtime?.id;
+    return !!browser.runtime?.id;
   } catch {
     return false;
   }

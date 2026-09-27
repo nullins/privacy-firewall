@@ -1,6 +1,6 @@
 import {pipeline, env} from '@huggingface/transformers'
 
-// Configure for Chrome extension environment
+// Configure for the browser extension environment
 env.allowRemoteModels = true;
 env.useBrowserCache = true;
 env.allowLocalModels = false;
@@ -12,8 +12,9 @@ env.backends.onnx.wasm.proxy = false;
 
 // Try to use local WASM files if available
 try {
-  if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
-    const wasmPath = chrome.runtime.getURL('wasm/');
+    const extensionApi = globalThis.browser;
+    if (extensionApi?.runtime?.getURL) {
+        const wasmPath = extensionApi.runtime.getURL('wasm/');
     env.backends.onnx.wasm.wasmPaths = wasmPath;
     console.log('[PrivacyWall] WASM path set to:', wasmPath);
   }
@@ -24,53 +25,25 @@ try {
 const MODEL_NAME = 'Xenova/bert-base-NER-uncased';
 
 let nerPipeline = null;
-let isModelLoading = false;
-
-const MAX_WAIT_TIME = 30000; // 30 seconds
-const CHECK_INTERVAL = 100; // 0.1 second
+let modelInitialization = null;
 
 // Main functions
 export async function initializeModel(progressCallback){
-    // If Pipeline exists, return it.
     if (nerPipeline) return nerPipeline;
-    // If model is loading, wait until it's loaded.
-     if (isModelLoading){
-        return new Promise((resolve, reject) => {
-            const startTime = Date.now();
-            
-            const checkStatus = () => {
-                if (nerPipeline){
-                    resolve(nerPipeline);
-                } else if (!isModelLoading) {
-                    // Loading finished but no pipeline = error occurred
-                    reject(new Error('Model loading failed'));
-                } else if (Date.now() - startTime > MAX_WAIT_TIME) {
-                    reject(new Error('Model loading timeout'));
-                } else {
-                    // Continue checking
-                    setTimeout(checkStatus, CHECK_INTERVAL);
-                }
-            };
-            
-            checkStatus();
-        });
-    }
-    
-    try{
-        // Load the model with explicit dtype to suppress warning
-        isModelLoading = true;
-        nerPipeline = await pipeline('token-classification', MODEL_NAME, {
+
+    if (!modelInitialization) {
+        modelInitialization = pipeline('token-classification', MODEL_NAME, {
             progress_callback: progressCallback,
             dtype: 'q8',  // Explicitly set quantization type
+        }).then(model => {
+            nerPipeline = model;
+            return model;
+        }).finally(() => {
+            modelInitialization = null;
         });
-        return nerPipeline;
-    }catch(error) {
-        nerPipeline = null; 
-        throw error;
-    } finally{
-        isModelLoading = false;
     }
 
+    return modelInitialization;
 }
 
 function mapEntityType(entity) {

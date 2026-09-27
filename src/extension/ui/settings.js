@@ -231,7 +231,7 @@ async function handleSave() {
     showToast('Settings saved successfully!', 'success');
     
     // Notify background script
-    chrome.runtime.sendMessage({ type: 'SETTINGS_UPDATED' });
+    browser.runtime.sendMessage({ type: MESSAGE_TYPES.SETTINGS_UPDATED }).catch(() => {});
     
   } catch (error) {
     console.error('[PrivacyWall Settings] Save failed:', error);
@@ -267,12 +267,7 @@ async function handleReset() {
 // ============================================================================
 
 function checkModelStatus() {
-  chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_ENGINE_STATUS }, (response) => {
-    if (chrome.runtime.lastError) {
-      updateModelStatus('error', 'Unable to connect');
-      return;
-    }
-    
+  browser.runtime.sendMessage({ type: MESSAGE_TYPES.GET_ENGINE_STATUS }).then(response => {
     if (response?.reachable) {
       updateModelStatus('ready', 'AI Model Ready ✓');
     } else if (response?.loading) {
@@ -283,7 +278,7 @@ function checkModelStatus() {
       updateModelStatus('loading', 'AI Model Initializing...');
       setTimeout(checkModelStatus, 3000);
     }
-  });
+  }).catch(() => updateModelStatus('error', 'Unable to connect'));
 }
 
 function updateModelStatus(status, text) {

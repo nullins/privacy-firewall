@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Chrome-Extension-4285F4?logo=googlechrome&logoColor=white" alt="Chrome Extension">
+  <img src="https://img.shields.io/badge/Firefox-Extension-FF7139?logo=firefoxbrowser&logoColor=white" alt="Firefox Extension">
   <img src="https://img.shields.io/badge/AI-ONNX%20Runtime-FF6F00?logo=onnx&logoColor=white" alt="ONNX Runtime">
   <img src="https://img.shields.io/badge/Privacy-100%25%20Local-34A853" alt="100% Local">
   <img src="https://img.shields.io/badge/License-MIT-blue" alt="MIT License">
@@ -88,54 +88,21 @@ Both layers run **100% locally** in your browser. No Python server. No API calls
 
 ## Quick Start
 
-### Option 1: Download & Install (No Code Required)
+### Build and Temporarily Install in Firefox
 
-> **Perfect for trying it out** — takes 30 seconds
+1. Clone the repository and build the Firefox package:
+  ```bash
+  git clone https://github.com/ArnabKar/privacy-firewall.git
+  cd privacy-firewall/src/extension
+  npm install
+  npm test
+  ```
 
-1. **Download** the latest release:
+2. In Firefox, open `about:debugging#/runtime/this-firefox`.
+3. Choose **Load Temporary Add-on**, then select `src/extension/dist/manifest.json`.
+4. Visit a protected AI chat site and test with sample sensitive text.
 
-   [![Download Extension](https://img.shields.io/badge/Download-Latest%20Release-4285F4?style=for-the-badge&logo=googlechrome)](https://github.com/privacyshield-ai/privacy-firewall/releases/download/v2.0.0/privacyfirewall-extension.zip)
-
-2. **Unzip** the downloaded file
-
-3. **Install in Chrome**:
-   - Go to `chrome://extensions`
-   - Enable **Developer mode** (toggle in top right)
-   - Click **Load unpacked**
-   - Select the unzipped folder
-
-4. **Done!** Visit [ChatGPT](https://chat.openai.com) and try pasting:
-   ```
-   Contact john.doe@company.com or call 555-123-4567
-   ```
-
----
-
-### Option 2: Build from Source (For Developers)
-
-<details>
-<summary>Click to expand developer instructions</summary>
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/ArnabKar/privacy-firewall.git
-   cd privacy-firewall
-   ```
-
-2. **Build the extension**
-   ```bash
-   cd src/extension
-   npm install
-   node build.js
-   ```
-
-3. **Load in Chrome**
-   - Navigate to `chrome://extensions`
-   - Enable **Developer mode** (top right)
-   - Click **Load unpacked**
-   - Select the `src/extension/dist` folder
-
-</details>
+Temporary add-ons are removed when Firefox restarts. Permanent installation requires a signed package; this branch currently targets local testing and does not include AMO submission/signing setup.
 
 ---
 
@@ -225,17 +192,15 @@ Access via the extension popup → **Open Settings**
 
 ```
 src/extension/
-├── manifest.json          # Chrome MV3 manifest
-├── background.js          # Service worker (message routing)
+├── manifest.json          # Firefox MV3 manifest
+├── background.js          # Firefox background script and AI runtime
 ├── content-script.js      # Page injection (paste/typing interception)
-├── offscreen.js           # AI model execution environment
-├── offscreen.html         # Offscreen document container
 ├── lib/
 │   └── transformer-detector.js  # BERT NER model wrapper
 ├── modules/
 │   ├── config.js          # Regex patterns & constants
 │   ├── scanner.js         # Detection orchestration
-│   ├── settings.js        # Chrome storage management
+│   ├── settings.js        # Firefox storage management
 │   ├── event-handlers.js  # Paste & input handlers
 │   └── ui/
 │       ├── modal.js       # Blocking modal component
@@ -248,7 +213,7 @@ src/extension/
 
 ### Technology Stack
 
-- **Extension**: Chrome Manifest V3, ES Modules
+- **Extension**: Firefox Manifest V3
 - **AI Runtime**: ONNX Runtime Web (WASM)
 - **Model**: `Xenova/bert-base-NER-uncased` via Hugging Face Transformers.js
 - **UI Isolation**: Shadow DOM (no CSS conflicts with host pages)
@@ -268,7 +233,7 @@ src/extension/
 
 - ✅ Process everything locally in your browser
 - ✅ Cache the AI model locally after first download
-- ✅ Store settings in Chrome's encrypted sync storage
+- ✅ Store settings in Firefox sync storage
 - ✅ Provide fully auditable open-source code
 
 **Verify yourself**: Open DevTools → Network tab. You'll see zero outbound requests during detection.
@@ -277,23 +242,23 @@ src/extension/
 
 ## Development
 
-### Build
+### Build Firefox Package
 
 ```bash
 cd src/extension
 npm install
-node build.js
+npm run build
 ```
 
 ### Run Tests
 
 ```bash
-node tests/content-script.test.js
+npm test
 ```
 
 ### Project Requirements
 
-- Chrome 120+ (for Offscreen Documents API)
+- Firefox 140+
 - Node.js 18+ (for building)
 
 ---
@@ -322,7 +287,7 @@ node tests/content-script.test.js
 
 ## Roadmap
 
-- [ ] Firefox/Safari support
+- [ ] Safari support
 - [ ] Custom regex patterns via settings
 - [ ] Redaction mode (replace vs block)
 - [ ] Export/import settings

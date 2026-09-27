@@ -10,19 +10,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Settings button - opens settings page
   if (settingsBtn) {
     settingsBtn.addEventListener('click', () => {
-      chrome.runtime.openOptionsPage();
+      browser.runtime.openOptionsPage();
     });
   }
   
   // Get AI engine status
   try {
-    chrome.runtime.sendMessage({ type: 'GET_ENGINE_STATUS' }, (response) => {
-      if (chrome.runtime.lastError) {
-        aiStatusEl.textContent = 'Unknown';
-        aiStatusEl.className = 'status-value offline';
-        return;
-      }
-      
+    const response = await browser.runtime.sendMessage({ type: 'GET_ENGINE_STATUS' });
       if (response?.reachable) {
         aiStatusEl.textContent = 'Ready';
         aiStatusEl.className = 'status-value ready';
@@ -33,7 +27,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         aiStatusEl.textContent = 'Regex Only';
         aiStatusEl.className = 'status-value offline';
       }
-    });
   } catch (e) {
     aiStatusEl.textContent = 'Error';
     aiStatusEl.className = 'status-value offline';
@@ -42,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Check if current site is protected
   try {
     // Load settings directly from storage
-    const result = await chrome.storage.sync.get(['privacywall_settings']);
+    const result = await browser.storage.sync.get('privacywall_settings');
     const settings = result.privacywall_settings || {
       protectAllSites: false,
       protectedSites: {
@@ -55,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     };
     
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
     
     if (tab?.url) {
       const url = new URL(tab.url);

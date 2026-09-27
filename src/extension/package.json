@@ -7,10 +7,11 @@
   },
   "scripts": {
     "build": "node build.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run build && node tests/content-script.test.js && node tests/firefox-build.test.js"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.0",
+    "@picocss/pico": "^2.1.1",
     "esbuild": "0.27.1",
     "onnxruntime-web": "^1.23.2"
   },

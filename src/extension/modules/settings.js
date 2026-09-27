@@ -1,7 +1,7 @@
 // ============================================================================
 // SETTINGS STORAGE HELPER - PrivacyWall
 // ============================================================================
-// Handles loading, saving, and managing settings in chrome.storage.sync
+// Handles loading, saving, and managing settings in browser.storage.sync
 
 import { DEFAULT_SETTINGS, STORAGE_KEY } from './settings-defaults.js';
 
@@ -26,60 +26,43 @@ function deepMerge(target, source) {
 }
 
 /**
- * Load settings from chrome.storage.sync
+ * Load settings from browser.storage.sync
  * Returns merged settings with defaults (ensures new fields are added)
  * @returns {Promise<Object>} Settings object
  */
 export async function loadSettings() {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get([STORAGE_KEY], (result) => {
-      if (chrome.runtime.lastError) {
-        console.warn('[PrivacyWall] Error loading settings:', chrome.runtime.lastError);
-        resolve({ ...DEFAULT_SETTINGS });
-        return;
-      }
-      
-      const stored = result[STORAGE_KEY];
-      if (!stored) {
-        // No settings yet, return defaults
-        resolve({ ...DEFAULT_SETTINGS });
-        return;
-      }
-      
-      // Merge stored settings with defaults (adds any new fields from updates)
-      const merged = deepMerge(DEFAULT_SETTINGS, stored);
-      resolve(merged);
-    });
-  });
+  try {
+    const result = await browser.storage.sync.get(STORAGE_KEY);
+    const stored = result[STORAGE_KEY];
+    return stored ? deepMerge(DEFAULT_SETTINGS, stored) : { ...DEFAULT_SETTINGS };
+  } catch (error) {
+    console.warn('[PrivacyWall] Error loading settings:', error);
+    return { ...DEFAULT_SETTINGS };
+  }
 }
 
 /**
- * Save settings to chrome.storage.sync
+ * Save settings to browser.storage.sync
  * @param {Object} settings - Settings object to save
  * @returns {Promise<boolean>} Success status
  */
 export async function saveSettings(settings) {
-  return new Promise((resolve) => {
-    // Update lastUpdated timestamp
-    const settingsToSave = {
-      ...settings,
-      meta: {
-        ...settings.meta,
-        lastUpdated: Date.now(),
-      },
-    };
-    
-    chrome.storage.sync.set({ [STORAGE_KEY]: settingsToSave }, () => {
-      if (chrome.runtime.lastError) {
-        console.error('[PrivacyWall] Error saving settings:', chrome.runtime.lastError);
-        resolve(false);
-        return;
-      }
-      
-      console.log('[PrivacyWall] Settings saved successfully');
-      resolve(true);
-    });
-  });
+  const settingsToSave = {
+    ...settings,
+    meta: {
+      ...settings.meta,
+      lastUpdated: Date.now(),
+    },
+  };
+
+  try {
+    await browser.storage.sync.set({ [STORAGE_KEY]: settingsToSave });
+    console.log('[PrivacyWall] Settings saved successfully');
+    return true;
+  } catch (error) {
+    console.error('[PrivacyWall] Error saving settings:', error);
+    return false;
+  }
 }
 
 /**
